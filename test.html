@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>公司取餐登記系統</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 500px; margin: auto; }
+        .success-screen { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: #22c55e; color: white; text-align: center; padding-top: 100px; font-size: 24px; }
+    </style>
+</head>
+<body>
+    <h2>同仁取餐登記</h2>
+    <div>卡號: <input type="text" id="cardId" oninput="checkUser()"></div>
+    <div id="userInfo" style="font-weight:bold; color:blue; margin:10px 0;"></div>
+    <div id="guestField" style="display:none;">廠商名: <input type="text" id="guestName"></div>
+    <canvas id="sig" width="300" height="150" style="border:1px solid #000;"></canvas>
+    <br><button onclick="saveData()">確認取餐</button>
+    <hr>
+    <button onclick="exportCSV()" style="background:#ff9800;">匯出當日報表 (CSV)</button>
+
+    <div id="success-screen" class="success-screen" onclick="this.style.display='none'">
+        ✅ 登記成功！<br><span id="displayInfo"></span><br><br>(點擊畫面返回)
+    </div>
+
+    <script>
+        // 員工名單 (維護區)
+        const userDB = { "001": "王大明", "002": "李小華" };
+
+        function checkUser() {
+            let id = document.getElementById('cardId').value;
+            let name = userDB[id] || "查無此人";
+            document.getElementById('userInfo').innerText = name;
+            document.getElementById('guestField').style.display = (id === "99999") ? "block" : "none";
+        }
+
+        function saveData() {
+            let id = document.getElementById('cardId').value;
+            let name = document.getElementById('userInfo').innerText;
+            if(name === "查無此人") return alert("請輸入正確卡號");
+            
+            let record = { id, name, time: new Date().toLocaleString(), guest: document.getElementById('guestName').value };
+            let logs = JSON.parse(localStorage.getItem('mealLogs') || '[]');
+            logs.push(record);
+            localStorage.setItem('mealLogs', JSON.stringify(logs));
+            
+            document.getElementById('displayInfo').innerText = `卡號: ${id} | 姓名: ${name}`;
+            document.getElementById('success-screen').style.display = 'block';
+        }
+
+        function exportCSV() {
+            let logs = JSON.parse(localStorage.getItem('mealLogs') || '[]');
+            let csv = "卡號,姓名,時間,備註\n" + logs.map(r => `${r.id},${r.name},${r.time},${r.guest}`).join("\n");
+            let blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "取餐記錄.csv";
+            link.click();
+        }
+    </script>
+</body>
+</html>
